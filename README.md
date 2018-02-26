@@ -5,7 +5,7 @@ TO-DO list:
 Sabrina:
 - Starting up
 - Parsing the command line
-- Exit
+- exit
 - pwd
 - cd
 
@@ -13,6 +13,7 @@ Van:
 - setpath
 - printpath
 - Running executable programs
+- ERROR CHECKING
 - Miscellaneous
 
 Both:
