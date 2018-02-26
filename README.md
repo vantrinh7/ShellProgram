@@ -1,6 +1,6 @@
 # Shell Program
 
-TO-DO lists:
+TO-DO list:
 
 Sabrina:
 - Starting up
@@ -17,3 +17,5 @@ Van:
 
 Both:
 - Correct memory management
+- Comments
+- Coding style
