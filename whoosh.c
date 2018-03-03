@@ -27,7 +27,8 @@ int whoosh_cd(char **args)
   }
   else {
     if (chdir(args[1]) != 0) {
-      perror("whoosh");
+      // Comment out as an example of merge conflict
+      // perror("whoosh");
     }
   }
   return 1;
