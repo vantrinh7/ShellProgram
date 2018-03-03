@@ -16,10 +16,7 @@ int whoosh_exit(char **args) {
   return 0;
 }
 
-int whoosh_pwd(char **args) {
 
-
-}
 int whoosh_cd(char **args)
 {
   if (args[1] == NULL) {
