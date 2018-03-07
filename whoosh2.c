@@ -4,32 +4,64 @@
 #include<string.h>
 #include<sys/wait.h>
 
-int wExit(char **args);
-int wPwd(char **args);
-int wCd(char **args);
 void loop();
 char* readInput();
 char** parseInput(char* line);
+int wExit(char *args);
+int wPwd(char *args);
+int wCd(char *args[]);
+int printPath();
+int setPath(char *args);
+void reportError();
 
-char *builtinStr[] = {"exit","pwd", "cd"};
-int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd};
+#define MAX_LINE_LEN 128
+
+//char *builtinStr[] = {"exit","pwd", "cd", "printpath", "setpath"};
+//int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd, &printPath, &setPath};
+
+char* path = "/bin\n";
 
 int main (int argc, char *argv[]) {
-  loop();
+  //loop();
+  printPath();
+  if (argv[1] != NULL) {
+  setPath(argv[1]);
+  printPath();
+  }  
   return 0;
 }
 
-int wExit(char **args) {
+int printPath() {
+  if (path != NULL) {
+    printf("%s", path);
+    return 0;
+  } else {
+    reportError();
+  }
+  return -1;
+}
+
+int setPath(char *args) {  
+  // Concatenate path given with end line character
+  char* dest = strcat(args, "\n");
+  if (dest != NULL) {
+    path = args;
+  } else {
+    reportError();
+  }
   return 0;
 }
 
-int wPwd(char **args) {
+int wExit(char *args) {
+  return 0;
+}
 
+int wPwd(char *args) {
   
   return 0;
 }
 
-int wCd(char **args)
+int wCd(char *args[])
 {
   if (args[1] == NULL) {
     fprintf(stderr, "whoosh: expected argument to \"cd\"\n");
@@ -120,6 +152,10 @@ char** parseInput(char* line){
   return tokens;
 }
 
+void reportError() {
+  char error_message[30] = "An error has occurred\n";
+  write(STDERR_FILENO, error_message, strlen(error_message));
+}
 
 
 

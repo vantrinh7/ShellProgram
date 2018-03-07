@@ -11,8 +11,8 @@ void loop();
 char* readInput();
 char** parseInput(char* line);
 
-char *builtinStr[] = {"exit","pwd", "cd"};
-int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd};
+//char *builtinStr[] = {"exit","pwd", "cd", "printpath", "setpath"};
+//int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd, &printPath, &setPath};
 
 int main (int argc, char *argv[]) {
   loop();
