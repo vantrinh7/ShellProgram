@@ -1,9 +1,9 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<stdlib.h>
-#include<string.h>
-#include<sys/wait.h>
-#include<sys/stat.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 
 void loop();
 char* readInput();
@@ -21,22 +21,28 @@ void reportError();
 //char *builtinStr[] = {"exit","pwd", "cd", "printpath", "setpath"};
 //int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd, &printPath, &setPath};
 
-char* path = "/bin";
+char* path = "/bin/openvt";
 
 int main (int argc, char *argv[]) {
   //loop();
   
-  setPath("/usr/games");
+  //setPath("/usr/games");
   printPath();
 
-  // Free the path memory
+  //struct stat buffer;
+  printf("Stat result: %d\n", isFileExisting(path));
 
   return 0;
 }
 
+/**
+ * Method to print out the path (/bin is default)
+ * Makes a copy of path so as not to modify path variable
+ *
+ **/
 void printPath() {
   // Allocate memory for a copy of path
-  // And report error during string copy
+  // and report error during string copy
   char* thePath;
   thePath = malloc(sizeof(char *)*strlen(path)); 
   char* dest1 = strcpy(thePath, path); 
@@ -46,15 +52,14 @@ void printPath() {
   }
   
   // Concatenate path copy with end line character
-  // And print out. Report error when concatenate
+  // and print out. Report error when concatenate
   char* dest2 = strcat(thePath, "\n");
   if (dest2 != NULL) {
     printf("%s", thePath);     
   } else {
     reportError();
     exit(1);
-  }
-  
+  } 
   // Free the variable
   free(thePath);
 }
@@ -68,10 +73,16 @@ void setPath(char *args) {
   }
 }
 
-int isFileExisting(char* path) {
-  /* struct stat buffer; */
-  /* printf("Status of file in /bin: %d\n", stat(path, &buffer)); */
-  return 0;
+int isFileExisting(char* pathToFile) {
+  struct stat buffer;
+  if (stat(pathToFile, &buffer) == 0) {
+    return 0;
+  } else if (stat(pathToFile, &buffer) == -1) {
+    return -1;
+  } else {
+    reportError();
+    exit(1);
+  }  
 }
 
 
