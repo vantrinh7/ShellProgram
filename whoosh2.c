@@ -12,7 +12,8 @@ int wExit(char *args);
 int wPwd(char *args);
 int wCd(char *args[]);
 void printPath();
-void setPath(char *args);
+void setPath(char* args);
+void runFile(char** args);
 int isFileExisting(char* path);
 void reportError();
 
@@ -21,16 +22,16 @@ void reportError();
 //char *builtinStr[] = {"exit","pwd", "cd", "printpath", "setpath"};
 //int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd, &printPath, &setPath};
 
-char* path = "/bin/openvt";
+char* path = "/bin";
 
 int main (int argc, char *argv[]) {
   //loop();
   
-  //setPath("/usr/games");
+  setPath("/usr/games");
   printPath();
 
-  //struct stat buffer;
-  printf("Stat result: %d\n", isFileExisting(path));
+  char* arr[] = {"/usr/games/gnome-sudoku", NULL};
+  runFile(arr);
 
   return 0;
 }
@@ -64,7 +65,7 @@ void printPath() {
   free(thePath);
 }
 
-void setPath(char *args) {
+void setPath(char* args) {
   if (args != NULL) {
     path = args;
   } else {
@@ -85,6 +86,43 @@ int isFileExisting(char* pathToFile) {
   }  
 }
 
+void runFile(char** args) {
+  pid_t pid;
+
+  pid = fork();
+  // If pid is negative, report error
+  if (pid < 0) {
+    fprintf(stderr, "Can't fork a process\n");
+    
+  }
+  // If pid is 0, this is the child, run the executable
+  else if (pid == 0) {
+    if (isFileExisting(args[0]) == 0) {
+      if (execv(args[0], args) == -1) {
+	perror("execve() ERROR ");
+      }
+    }
+    else {
+      fprintf(stderr, "Error: File does not exist\n");
+    }
+  }
+  // If pid is positive, this is the parent
+  // Wait for child to complete
+  else {
+    pid_t waited;
+    int status;
+
+    waited = wait(&status);
+    if (waited == -1) {
+      perror("wait() ERROR ");
+    }
+    else {
+      // print its exit code
+      fprintf(stdout,"I am the parent. My child exited with code %d\n",
+	      WEXITSTATUS(status));
+    }
+  }
+}
 
 int wExit(char *args) {
   return 0;
