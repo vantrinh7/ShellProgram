@@ -3,6 +3,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<sys/wait.h>
+#include<sys/stat.h>
 
 void loop();
 char* readInput();
@@ -10,8 +11,9 @@ char** parseInput(char* line);
 int wExit(char *args);
 int wPwd(char *args);
 int wCd(char *args[]);
-int printPath();
-int setPath(char *args);
+void printPath();
+void setPath(char *args);
+int isFileExisting(char* path);
 void reportError();
 
 #define MAX_LINE_LEN 128
@@ -19,38 +21,67 @@ void reportError();
 //char *builtinStr[] = {"exit","pwd", "cd", "printpath", "setpath"};
 //int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd, &printPath, &setPath};
 
-char* path = "/bin\n";
+char* path;
 
 int main (int argc, char *argv[]) {
   //loop();
+  
+  setPath("/usr/games");
   printPath();
-  if (argv[1] != NULL) {
-  setPath(argv[1]);
-  printPath();
-  }  
+
+  // Free the path memory
+  free(path);
   return 0;
 }
 
-int printPath() {
-  if (path != NULL) {
-    printf("%s", path);
-    return 0;
-  } else {
-    reportError();
+void printPath() {
+  // If path is null, allocate memory for default /bin value
+  if (path == NULL) {
+    path = malloc(sizeof(char *)*4);
+    char* dest = strcpy(path, "/bin");
+    // Report error during string copy
+    if (dest == NULL) {
+      reportError();
+      exit(1);
+    }
   }
-  return -1;
-}
-
-int setPath(char *args) {  
+  // If path is not null, allocate memory for the length of the path
+  else {
+    char* thePath = path;
+    path = malloc(sizeof(char *)*strlen(path));
+    char* dest = strcpy(path, thePath);
+     // Report error during string copy
+     if (dest == NULL) {
+      reportError();
+      exit(1);
+    }
+  }
   // Concatenate path given with end line character
-  char* dest = strcat(args, "\n");
+  char* dest = strcat(path, "\n");
+  // Print out, report error when concatenate
   if (dest != NULL) {
-    path = args;
+    printf("%s", path);     
   } else {
     reportError();
+    exit(1);
   }
+}
+
+void setPath(char *args) {
+  if (args != NULL) {
+    path = args;    
+  } else {
+    reportError();
+    exit(1);
+  }
+}
+
+int isFileExisting(char* path) {
+  /* struct stat buffer; */
+  /* printf("Status of file in /bin: %d\n", stat(path, &buffer)); */
   return 0;
 }
+
 
 int wExit(char *args) {
   return 0;
