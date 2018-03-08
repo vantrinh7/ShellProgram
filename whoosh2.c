@@ -21,7 +21,7 @@ void reportError();
 //char *builtinStr[] = {"exit","pwd", "cd", "printpath", "setpath"};
 //int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd, &printPath, &setPath};
 
-char* path;
+char* path = "/bin";
 
 int main (int argc, char *argv[]) {
   //loop();
@@ -30,46 +30,38 @@ int main (int argc, char *argv[]) {
   printPath();
 
   // Free the path memory
-  free(path);
+
   return 0;
 }
 
 void printPath() {
-  // If path is null, allocate memory for default /bin value
-  if (path == NULL) {
-    path = malloc(sizeof(char *)*4);
-    char* dest = strcpy(path, "/bin");
-    // Report error during string copy
-    if (dest == NULL) {
-      reportError();
-      exit(1);
-    }
+  // Allocate memory for a copy of path
+  // And report error during string copy
+  char* thePath;
+  thePath = malloc(sizeof(char *)*strlen(path)); 
+  char* dest1 = strcpy(thePath, path); 
+  if (dest1 == NULL) {
+    reportError();
+    exit(1);
   }
-  // If path is not null, allocate memory for the length of the path
-  else {
-    char* thePath = path;
-    path = malloc(sizeof(char *)*strlen(path));
-    char* dest = strcpy(path, thePath);
-     // Report error during string copy
-     if (dest == NULL) {
-      reportError();
-      exit(1);
-    }
-  }
-  // Concatenate path given with end line character
-  char* dest = strcat(path, "\n");
-  // Print out, report error when concatenate
-  if (dest != NULL) {
-    printf("%s", path);     
+  
+  // Concatenate path copy with end line character
+  // And print out. Report error when concatenate
+  char* dest2 = strcat(thePath, "\n");
+  if (dest2 != NULL) {
+    printf("%s", thePath);     
   } else {
     reportError();
     exit(1);
   }
+  
+  // Free the variable
+  free(thePath);
 }
 
 void setPath(char *args) {
   if (args != NULL) {
-    path = args;    
+    path = args;
   } else {
     reportError();
     exit(1);
