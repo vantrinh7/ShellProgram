@@ -33,8 +33,20 @@ int main (int argc, char *argv[]) {
   /* runFile(arr); */
 
   char* input = readInput();
-  free(input);
+  char** inputArray = parseInput(input);
   
+  /* int i = 0; */
+  /* while (i < 5) { */
+  /*   if (inputArray[i] != NULL) { */
+  /*   printf("Input %d is: %s\n", i, inputArray[i]); */
+  /*   } else { */
+  /*    printf("Input %d is: %s\n", i, "null"); */
+  /*   } */
+  /*   i++; */
+  /* } */
+  
+  free(input);
+  free(inputArray);
   return 0;
 }
 
@@ -59,8 +71,7 @@ char* readInput() {
   char *line = NULL;
   size_t lineLen = 0;
 
-  // Read line from input stream using getLine from standard library
-  // which malloc line and realloc when line exceeds length
+  // Read line from input stream 
   ssize_t readResult; 
   if (stdin != NULL) {
   readResult = getline(&line, &lineLen, stdin);
@@ -69,39 +80,47 @@ char* readInput() {
     exit(1);
   }
   // Report error if reading result is -1
-  if (readResult == -1) {
+  if ((readResult == -1)) {
     fprintf(stderr, "Error: cannot read line\n");
     exit(1);
+  } else if (readResult > MAX_LINE_LEN) {
+    fprintf(stderr, "Error: Line too long - Continue processing\n");
   }
-  
-  printf("Input is %s", line);
   return line;  
 }
 
 char** parseInput(char* line){
-  int input_allocation = 64;
-  char ** tokens = malloc(sizeof(char*) * input_allocation);
-  char* token;
+  int arraySize = MAX_LINE_LEN;
+  char ** tokens = calloc(arraySize, sizeof(char *));
+  char* delim = " \n\t"; //Separate based on space, end line and tab characters
   int index = 0;
 
   if(tokens == NULL) {
-    fprintf(stderr, "malloc failed\n" );
+    fprintf(stderr, "ERROR: Malloc failed\n" );
   }
+  // On first call, strtok returns pointer to
+  // the firt part of line separated by delimiter
+  tokens[0] = strtok(line, delim);
 
-  token = strtok(line, " " );
-  while(token != NULL) {
-    tokens[index] = token;
-    index++;
-
-    if(index >= input_allocation) { // if outbounds, reallocate
-      // arr = realloc(arr, input_allocation);
-      if(tokens == NULL) {
-        fprintf(stderr,"malloc failed\n" );
-      }
+  // On subsequent calls, strtok takes NULL as value to string
+  // While previous token is not null, keep chopping the line
+  //while (index < arraySize) {
+    while(tokens[index] != NULL) {
+      index++;
+      tokens[index] = strtok(NULL, delim);
+    
+      /* if(index >= arraySize) { // if outbounds, reallocate */
+      /* 	arraySize = arraySize + MAX_LINE_LEN; */
+      /* 	tokens = realloc(tokens, sizeof(char *) * arraySize); */
+      /* 	if(tokens == NULL) { */
+      /* 	  fprintf(stderr,"ERROR: malloc failed\n" ); */
+      /* 	} */
+      /* }  */
     }
-    token = strtok(NULL, " ");
-  }
-  tokens[index] = NULL;
+    //}
+    
+  // Give last token a null value
+  tokens[index] = NULL;  
   return tokens;
 }
 
