@@ -14,7 +14,6 @@ int wCd(char *args[]);
 void printPath();
 void setPath(char* args);
 void runFile(char** args);
-int isFileExisting(char* path);
 void reportError();
 
 #define MAX_LINE_LEN 128
@@ -27,13 +26,83 @@ char* path = "/bin";
 int main (int argc, char *argv[]) {
   //loop();
   
-  setPath("/usr/games");
-  printPath();
+  /* setPath("/usr/games"); */
+  /* printPath(); */
 
-  char* arr[] = {"/usr/games/gnome-sudoku", NULL};
-  runFile(arr);
+  /* char* arr[] = {"/usr/games/gnome-sudoku", NULL}; */
+  /* runFile(arr); */
 
+  char* input = readInput();
+  free(input);
+  
   return 0;
+}
+
+void loop() {
+  //char* input;
+  //char* get_args[];
+  int status = 0;
+
+  do {
+    printf("whoosh> "); // print prompt
+    //input = readInput(); // a function call to reads the input
+    //get_args = parseInput(); //  a function call to split the input into arguements
+    //status = whoosh_init(get_args); // execute those arugments
+
+    //free(input);
+    //free(get_args);
+  }while(status);
+
+}
+
+char* readInput() {
+  char *line = NULL;
+  size_t lineLen = 0;
+
+  // Read line from input stream using getLine from standard library
+  // which malloc line and realloc when line exceeds length
+  ssize_t readResult; 
+  if (stdin != NULL) {
+  readResult = getline(&line, &lineLen, stdin);
+  } else {
+    fprintf(stderr, "Error: stdin is null\n");
+    exit(1);
+  }
+  // Report error if reading result is -1
+  if (readResult == -1) {
+    fprintf(stderr, "Error: cannot read line\n");
+    exit(1);
+  }
+  
+  printf("Input is %s", line);
+  return line;  
+}
+
+char** parseInput(char* line){
+  int input_allocation = 64;
+  char ** tokens = malloc(sizeof(char*) * input_allocation);
+  char* token;
+  int index = 0;
+
+  if(tokens == NULL) {
+    fprintf(stderr, "malloc failed\n" );
+  }
+
+  token = strtok(line, " " );
+  while(token != NULL) {
+    tokens[index] = token;
+    index++;
+
+    if(index >= input_allocation) { // if outbounds, reallocate
+      // arr = realloc(arr, input_allocation);
+      if(tokens == NULL) {
+        fprintf(stderr,"malloc failed\n" );
+      }
+    }
+    token = strtok(NULL, " ");
+  }
+  tokens[index] = NULL;
+  return tokens;
 }
 
 /**
@@ -74,18 +143,6 @@ void setPath(char* args) {
   }
 }
 
-int isFileExisting(char* pathToFile) {
-  struct stat buffer;
-  if (stat(pathToFile, &buffer) == 0) {
-    return 0;
-  } else if (stat(pathToFile, &buffer) == -1) {
-    return -1;
-  } else {
-    reportError();
-    exit(1);
-  }  
-}
-
 void runFile(char** args) {
   pid_t pid;
 
@@ -95,9 +152,14 @@ void runFile(char** args) {
     fprintf(stderr, "Can't fork a process\n");
     
   }
-  // If pid is 0, this is the child, run the executable
+  // If pid is 0, this is the child
   else if (pid == 0) {
-    if (isFileExisting(args[0]) == 0) {
+    
+    // Check if file exists using stat
+    struct stat buffer;
+    if (stat(args[0], &buffer) == 0) {
+
+      // If file exists, run the executable & report error
       if (execv(args[0], args) == -1) {
 	perror("execve() ERROR ");
       }
@@ -145,83 +207,6 @@ int wCd(char *args[])
     }
   }
   return 1;
-}
-
-
-void loop() {
-  //char* input;
-  //char* get_args[];
-  int status = 0;
-
-  do {
-    printf("whoosh> "); // print prompt
-    //input = readInput(); // a function call to reads the input
-    //get_args = parseInput(); //  a function call to split the input into arguements
-    //status = whoosh_init(get_args); // execute those arugments
-
-    //free(input);
-    //free(get_args);
-  }while(status);
-
-}
-
-char* readInput() {
-  int input_allocation = 127284;
-  char* arr = (char*) malloc(sizeof(char)*input_allocation);
-  int index = 0;
-  int curr_char;
-
-
-  if(arr == NULL) {
-    fprintf(stderr,"malloc failed\n" );
-  }
-
-  while(1){
-    curr_char = getchar();
-
-    if( curr_char == '\n' || curr_char == EOF){ // if it’s the newline, or EOF, null terminate our current string and return it
-      arr[index] = '0';
-      return arr;
-    }
-    else { // otherwise, add the character to our existing string
-      arr[index] = curr_char;
-    }
-    index++;
-
-    if(index >= input_allocation) { // if outbounds, reallocate
-      arr = realloc(arr, input_allocation);
-      if(arr == NULL) {
-        fprintf(stderr, "malloc failed\n" );
-      }
-    }
-  }
-}
-
-char** parseInput(char* line){
-  int input_allocation = 64;
-  char ** tokens = malloc(sizeof(char*) * input_allocation);
-  char* token;
-  int index = 0;
-
-  if(tokens == NULL) {
-    fprintf(stderr, "malloc failed\n" );
-  }
-
-  token = strtok(line, " " );
-  while(token != NULL) {
-    tokens[index] = token;
-    index++;
-
-    if(index >= input_allocation) { // if outbounds, reallocate
-      // arr = realloc(arr, input_allocation);
-      if(tokens == NULL) {
-        fprintf(stderr,"malloc failed\n" );
-      }
-    }
-    token = strtok(NULL, " ");
-  }
-  tokens[index] = NULL;
-  return tokens;
 }
 
 void reportError() {
