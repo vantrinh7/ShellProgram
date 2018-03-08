@@ -9,9 +9,9 @@ void printPrompt();
 char* readInput();
 char** parseInput(char* line);
 int execCommands(char** args);
-int wExit(char** args);
-int wPwd(char *args);
-int wCd(char *args[]);
+int wExit(char* args[]);
+int wPwd(char* args[]);
+int wCd(char* args[]);
 int printPath();
 void setPath(char* args);
 void runFile(char** args);
@@ -23,7 +23,7 @@ char* path = "/bin";
 
 int main (int argc, char *argv[]) {
   //loop();
-  
+
   /* setPath("/usr/games"); */
   /* printPath(); */
 
@@ -33,7 +33,7 @@ int main (int argc, char *argv[]) {
   /* char* input = readInput(); */
   /* char** inputArray = parseInput(input); */
   /* execCommands(inputArray); */
-  
+
   /* int i = 0; */
   /* while (i < 5) { */
   /*   if (inputArray[i] != NULL) { */
@@ -43,12 +43,12 @@ int main (int argc, char *argv[]) {
   /*   } */
   /*   i++; */
   /* } */
-  
+
   /* free(input); */
   /* free(inputArray); */
 
   printPrompt();
-  
+
   return 0;
 }
 
@@ -96,8 +96,8 @@ char* readInput() {
   char *line = NULL;
   size_t lineLen = 0;
 
-  // Read line from input stream 
-  ssize_t readResult; 
+  // Read line from input stream
+  ssize_t readResult;
   if (stdin != NULL) {
   readResult = getline(&line, &lineLen, stdin);
   } else {
@@ -111,7 +111,7 @@ char* readInput() {
   } else if (readResult > MAX_LINE_LEN) {
     fprintf(stderr, "Error: Line too long - Continue processing\n");
   }
-  return line;  
+  return line;
 }
 
 char** parseInput(char* line){
@@ -133,7 +133,7 @@ char** parseInput(char* line){
     while(tokens[index] != NULL) {
       index++;
       tokens[index] = strtok(NULL, delim);
-    
+
       /* if(index >= arraySize) { // if outbounds, reallocate */
       /* 	arraySize = arraySize + MAX_LINE_LEN; */
       /* 	tokens = realloc(tokens, sizeof(char *) * arraySize); */
@@ -143,9 +143,9 @@ char** parseInput(char* line){
       /* }  */
     }
     //}
-    
+
   // Give last token a null value
-  tokens[index] = NULL;  
+  tokens[index] = NULL;
   return tokens;
 }
 
@@ -158,24 +158,24 @@ int printPath() {
   // Allocate memory for a copy of path
   // and report error during string copy
   char* thePath;
-  thePath = malloc(sizeof(char *)*strlen(path)); 
-  char* dest1 = strcpy(thePath, path); 
+  thePath = malloc(sizeof(char *)*strlen(path));
+  char* dest1 = strcpy(thePath, path);
   if (dest1 == NULL) {
     reportError();
-    exit(1);                       
+    exit(1);
     return 0;
   }
-  
+
   // Concatenate path copy with end line character
   // and print out. Report error when concatenate
   char* dest2 = strcat(thePath, "\n");
   if (dest2 != NULL) {
-    printf("%s", thePath);     
+    printf("%s", thePath);
   } else {
     reportError();
-    exit(1);                         
+    exit(1);
     return 0;
-  } 
+  }
   // Free the variable
   free(thePath);
   return 1;
@@ -197,11 +197,11 @@ void runFile(char** args) {
   // If pid is negative, report error
   if (pid < 0) {
     fprintf(stderr, "Can't fork a process\n");
-    
+
   }
   // If pid is 0, this is the child
   else if (pid == 0) {
-    
+
     // Check if file exists using stat
     struct stat buffer;
     if (stat(args[0], &buffer) == 0) {
@@ -235,33 +235,51 @@ void runFile(char** args) {
   }
 }
 
-int wExit(char** args) {
-  return 0;
-}
-
-int wPwd(char *args) {
-  
-  return 0;
-}
-
-int wCd(char *args[])
-{
-  if (args[1] == NULL) {
-    fprintf(stderr, "whoosh: expected argument to \"cd\"\n");
+int wExit(char* args[]) {
+  if(strcmp(args[0], "exit") == 0) {
+    exit(0);
   }
-  else {
-    if (chdir(args[1]) != 0) {
-      // Comment out as an example of merge conflict
-      // perror("whoosh");
+}
+
+int wPwd(char *args[]) {
+  if( strcmp (args[0], "pwd") == 0) {
+    char buff[PATH_MAX + 1];
+    char* cwd;
+
+    cwd = getcwd(buff, PATH_MAX + 1);
+    if(cwd != NULL) {
+      printf("%s\n",cwd);
+    } else{
+      fprintf(stderr, "An error has occurred\n");
     }
+      return 0;
   }
   return 1;
+
+}
+
+int wCd(char *args[], int num_args)
+{
+  if (strcmp(args[0], "cd") == 0) {
+    char* direct;
+    if( num_args == 1){
+      dir = getenv("HOME");
+      if(chdir(dir) != 0) {
+        fprintf(stderr, "An error has occurred\n");
+      }
+    }
+  else {
+    dir = args[1];
+    if (chdir(dir) != 0) {
+      fprintf(stderr, "An error has occurred\n");
+    }
+  }
+  return 0;
+ }
+ return 1;
 }
 
 void reportError() {
   char error_message[30] = "An error has occurred\n";
   write(STDERR_FILENO, error_message, strlen(error_message));
 }
-
-
-
