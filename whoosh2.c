@@ -5,21 +5,19 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-void loop();
+void printPrompt();
 char* readInput();
 char** parseInput(char* line);
-int wExit(char *args);
+int execCommands(char** args);
+int wExit(char** args);
 int wPwd(char *args);
 int wCd(char *args[]);
-void printPath();
+int printPath();
 void setPath(char* args);
 void runFile(char** args);
 void reportError();
 
 #define MAX_LINE_LEN 128
-
-//char *builtinStr[] = {"exit","pwd", "cd", "printpath", "setpath"};
-//int (*builtinFunc[]) (char **) = { &wExit, &wPwd, &wCd, &printPath, &setPath};
 
 char* path = "/bin";
 
@@ -32,8 +30,9 @@ int main (int argc, char *argv[]) {
   /* char* arr[] = {"/usr/games/gnome-sudoku", NULL}; */
   /* runFile(arr); */
 
-  char* input = readInput();
-  char** inputArray = parseInput(input);
+  /* char* input = readInput(); */
+  /* char** inputArray = parseInput(input); */
+  /* execCommands(inputArray); */
   
   /* int i = 0; */
   /* while (i < 5) { */
@@ -45,26 +44,52 @@ int main (int argc, char *argv[]) {
   /*   i++; */
   /* } */
   
-  free(input);
-  free(inputArray);
+  /* free(input); */
+  /* free(inputArray); */
+
+  printPrompt();
+  
   return 0;
 }
 
-void loop() {
-  //char* input;
-  //char* get_args[];
-  int status = 0;
+void printPrompt() {
+  char* input;
+  char** inputArray;
+  int isContinuing = 1;
 
-  do {
+  while (isContinuing) {
     printf("whoosh> "); // print prompt
-    //input = readInput(); // a function call to reads the input
-    //get_args = parseInput(); //  a function call to split the input into arguements
-    //status = whoosh_init(get_args); // execute those arugments
+    input = readInput(); // a function call to reads the input
+    inputArray = parseInput(input); //  a function call to split the input into arguements
+    isContinuing = execCommands(inputArray); // execute those arugments
 
-    //free(input);
-    //free(get_args);
-  }while(status);
+    free(input);
+    free(inputArray);
+  }
+}
 
+int execCommands(char** args) {
+  char *commands[] = {"exit","pwd", "cd", "printpath", "setpath"};
+  for (int i = 0; i < sizeof(commands)/sizeof(char *); i++) {
+    if (strcmp(args[0], commands[i]) == 0) {
+      switch(i) {
+      case 0: // exit command
+	//wExit();
+	break;
+      case 1: // pwd command
+	break;
+      case 2: // cd command
+	break;
+      case 3: // printPath command
+	return printPath();
+	break;
+      case 4: // setPath command
+	// setPath(args);
+	break;
+      }
+    }
+  }
+  return 0;
 }
 
 char* readInput() {
@@ -129,7 +154,7 @@ char** parseInput(char* line){
  * Makes a copy of path so as not to modify path variable
  *
  **/
-void printPath() {
+int printPath() {
   // Allocate memory for a copy of path
   // and report error during string copy
   char* thePath;
@@ -137,7 +162,8 @@ void printPath() {
   char* dest1 = strcpy(thePath, path); 
   if (dest1 == NULL) {
     reportError();
-    exit(1);
+    exit(1);                       
+    return 0;
   }
   
   // Concatenate path copy with end line character
@@ -147,10 +173,12 @@ void printPath() {
     printf("%s", thePath);     
   } else {
     reportError();
-    exit(1);
+    exit(1);                         
+    return 0;
   } 
   // Free the variable
   free(thePath);
+  return 1;
 }
 
 void setPath(char* args) {
@@ -178,13 +206,15 @@ void runFile(char** args) {
     struct stat buffer;
     if (stat(args[0], &buffer) == 0) {
 
-      // If file exists, run the executable & report error
+      // Run the executable
+      // If file cannot be executed, report error and continue processing
       if (execv(args[0], args) == -1) {
-	perror("execve() ERROR ");
+	perror("Report error and continue processing ");
       }
     }
+    // If file doesn't exist, report error and continue processing
     else {
-      fprintf(stderr, "Error: File does not exist\n");
+      fprintf(stderr, "Report error and continue processing\n");
     }
   }
   // If pid is positive, this is the parent
@@ -205,7 +235,7 @@ void runFile(char** args) {
   }
 }
 
-int wExit(char *args) {
+int wExit(char** args) {
   return 0;
 }
 
