@@ -4,19 +4,21 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
+#include <fcntl.h>
 
 void printPrompt();
 char* readInput();
 char** parseInput(char* line);
 int execCommands(char** args);
-int wExit(char** args);
-int wPwd(char *args);
-int wCd(char *args[]);
+int wExit(char* args[]);
+int wPwd(char* args[]);
+int wCd(char* args[]);
 int printPath();
 int setPath(char** args);
 void runFile(char** args);
 void reportError();
-
 #define MAX_LINE_LEN 128
 
 char** path;
@@ -60,6 +62,7 @@ int main (int argc, char *argv[]) {
   return 0;
 }
 
+
 void printPrompt() {
   char* input;
   char** inputArray;
@@ -70,6 +73,7 @@ void printPrompt() {
     input = readInput(); // a function call to reads the input
     inputArray = parseInput(input); //  a function call to split the input into arguements
     isContinuing = execCommands(inputArray); // execute those arugments
+
     //printf("isContinuing is: %d\n", isContinuing);
     free(input);
     free(inputArray);    
@@ -103,8 +107,21 @@ int execCommands(char** args) {
       }
     }
   }
-  return 0;
 }
+
+/* int execCommands(char* args[]) { */
+/*   //char *commands[] = {"exit","pwd", "cd", "printpath", "setpath"}; */
+/*   if( args[0] == NULL) { */
+/*     return 1; */
+/*   } */
+/*   int i; */
+/*   for(i = 0; i < num_built_commands(); i++) { */
+/*     if( strcmp(args[0], commands_str[i]) == 0) { */
+/*       return (*command_func[i])(args); */
+/*     } */
+/*   } */
+/*   runFile(args); */
+/* } */
 
 int setPath(char** args) {
   // If path is not null
@@ -182,8 +199,8 @@ char* readInput() {
   char *line = NULL;
   size_t lineLen = 0;
 
-  // Read line from input stream 
-  ssize_t readResult; 
+  // Read line from input stream
+  ssize_t readResult;
   if (stdin != NULL) {
   readResult = getline(&line, &lineLen, stdin);
   } else {
@@ -197,7 +214,7 @@ char* readInput() {
   } else if (readResult > MAX_LINE_LEN) {
     fprintf(stderr, "Error: Line too long - Continue processing\n");
   }
-  return line;  
+  return line;
 }
 
 char** parseInput(char* line){
@@ -219,7 +236,7 @@ char** parseInput(char* line){
     while(tokens[index] != NULL) {
       index++;
       tokens[index] = strtok(NULL, delim);
-    
+
       /* if(index >= arraySize) { // if outbounds, reallocate */
       /* 	arraySize = arraySize + MAX_LINE_LEN; */
       /* 	tokens = realloc(tokens, sizeof(char *) * arraySize); */
@@ -229,13 +246,54 @@ char** parseInput(char* line){
       /* }  */
     }
     //}
-    
+
   // Give last token a null value
   tokens[index] = NULL;
 
   // Save latest number of array size to be used for setpath
   if (strcmp(tokens[0], "setpath") == 0) {
     pathArrSize = index - 1; // Subtract first argument
+  return tokens;
+}
+
+/**
+ * Method to print out the path (/bin is default)
+ * Makes a copy of path so as not to modify path variable
+ *
+ **/
+int printPath() {
+  // Allocate memory for a copy of path
+  // and report error during string copy
+  char* thePath;
+  thePath = malloc(sizeof(char *)*strlen(path));
+  char* dest1 = strcpy(thePath, path);
+  if (dest1 == NULL) {
+    reportError();
+    exit(1);
+    return 0;
+  }
+
+  // Concatenate path copy with end line character
+  // and print out. Report error when concatenate
+  char* dest2 = strcat(thePath, "\n");
+  if (dest2 != NULL) {
+    printf("%s", thePath);
+  } else {
+    reportError();
+    exit(1);
+    return 0;
+  }
+  // Free the variable
+  free(thePath);
+  return 1;
+}
+
+void setPath(char* args) {
+  if (args != NULL) {
+    path = args;
+  } else {
+    reportError();
+    exit(1);
   }
   return tokens;
 }
@@ -247,11 +305,11 @@ void runFile(char** args) {
   // If pid is negative, report error
   if (pid < 0) {
     fprintf(stderr, "Can't fork a process\n");
-    
+
   }
   // If pid is 0, this is the child
   else if (pid == 0) {
-    
+
     // Check if file exists using stat
     struct stat buffer;
     if (stat(args[0], &buffer) == 0) {
@@ -285,27 +343,57 @@ void runFile(char** args) {
   }
 }
 
-int wExit(char** args) {
-  return 0;
-}
-
-int wPwd(char *args) {
-  
-  return 0;
-}
-
-int wCd(char *args[])
-{
-  if (args[1] == NULL) {
-    fprintf(stderr, "whoosh: expected argument to \"cd\"\n");
+int wExit(char* args[]) {
+  if(strcmp(args[0], "exit") == 0) {
+    exit(0);
   }
-  else {
-    if (chdir(args[1]) != 0) {
-      // Comment out as an example of merge conflict
-      // perror("whoosh");
+}
+
+int wPwd(char *args[]) {
+  if( strcmp (args[0], "pwd") == 0) {
+    char buff[PATH_MAX + 1];
+    char* cwd;
+
+    cwd = getcwd(buff, PATH_MAX + 1);
+    if(cwd != NULL) {
+      printf("%s\n",cwd);
+    } else{
+      reportError();
     }
+      return 0;
   }
   return 1;
+
+}
+
+int wCd(char *args[]){
+ //  if (strcmp(args[0], "cd") == 0) {
+ //    char* dir;
+ //    if( num_args == 1){
+ //      dir = getenv("HOME");
+ //      if(chdir(dir) != 0) {
+ //        reportError();
+ //      }
+ //    }
+ //  else {
+ //    dir = args[1];
+ //    if (chdir(dir) != 0){
+ //      reportError();
+ //    }
+ //  }
+ //  return 0;
+ // }
+ // return 1;
+ if (args[1] == NULL) {
+   fprintf(stderr, "whoosh: expected argument to \"cd\"\n");
+ }
+ else {
+   if (chdir(args[1]) != 0) {
+     // Comment out as an example of merge conflict
+    perror("whoosh");
+   }   
+ }
+ return 1;
 }
 
 void reportError() {
@@ -313,5 +401,10 @@ void reportError() {
   write(STDERR_FILENO, error_message, strlen(error_message));
 }
 
+int main(int argc, char**argv) {
+printPrompt();
+
+return 0;
 
 
+}
