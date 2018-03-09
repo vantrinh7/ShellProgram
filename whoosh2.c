@@ -4,6 +4,9 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
+#include <fcntl.h>
 
 void printPrompt();
 char* readInput();
@@ -16,41 +19,11 @@ int printPath();
 void setPath(char* args);
 void runFile(char** args);
 void reportError();
-
 #define MAX_LINE_LEN 128
-
 char* path = "/bin";
+char* commands_str[] = { "exit","pwd","cd", "printpath", "setpath"};
+int (*command_func[]) (char**) = {&wExit, &wCd, &wPwd, &printPath, &setPath};
 
-int main (int argc, char *argv[]) {
-  //loop();
-
-  /* setPath("/usr/games"); */
-  /* printPath(); */
-
-  /* char* arr[] = {"/usr/games/gnome-sudoku", NULL}; */
-  /* runFile(arr); */
-
-  /* char* input = readInput(); */
-  /* char** inputArray = parseInput(input); */
-  /* execCommands(inputArray); */
-
-  /* int i = 0; */
-  /* while (i < 5) { */
-  /*   if (inputArray[i] != NULL) { */
-  /*   printf("Input %d is: %s\n", i, inputArray[i]); */
-  /*   } else { */
-  /*    printf("Input %d is: %s\n", i, "null"); */
-  /*   } */
-  /*   i++; */
-  /* } */
-
-  /* free(input); */
-  /* free(inputArray); */
-
-  printPrompt();
-
-  return 0;
-}
 
 void printPrompt() {
   char* input;
@@ -62,34 +35,28 @@ void printPrompt() {
     input = readInput(); // a function call to reads the input
     inputArray = parseInput(input); //  a function call to split the input into arguements
     isContinuing = execCommands(inputArray); // execute those arugments
-
     free(input);
     free(inputArray);
   }
 }
 
-int execCommands(char** args) {
-  char *commands[] = {"exit","pwd", "cd", "printpath", "setpath"};
-  for (int i = 0; i < sizeof(commands)/sizeof(char *); i++) {
-    if (strcmp(args[0], commands[i]) == 0) {
-      switch(i) {
-      case 0: // exit command
-	//wExit();
-	break;
-      case 1: // pwd command
-	break;
-      case 2: // cd command
-	break;
-      case 3: // printPath command
-	return printPath();
-	break;
-      case 4: // setPath command
-	// setPath(args);
-	break;
-      }
+int num_built_commands() {
+  return sizeof(commands_str)/ sizeof(char*);
+}
+
+
+int execCommands(char* args[]) {
+  //char *commands[] = {"exit","pwd", "cd", "printpath", "setpath"};
+  if( args[0] == NULL) {
+    return 1;
+  }
+  int i;
+  for(i = 0; i < num_built_commands(); i++) {
+    if( strcmp(args[0], commands_str[i]) == 0) {
+      return (*command_func[i])(args);
     }
   }
-  return 0;
+  runFile(args);
 }
 
 char* readInput() {
@@ -250,7 +217,7 @@ int wPwd(char *args[]) {
     if(cwd != NULL) {
       printf("%s\n",cwd);
     } else{
-      fprintf(stderr, "An error has occurred\n");
+      reportError();
     }
       return 0;
   }
@@ -258,23 +225,32 @@ int wPwd(char *args[]) {
 
 }
 
-int wCd(char *args[], int num_args)
-{
-  if (strcmp(args[0], "cd") == 0) {
-    char* direct;
-    if( num_args == 1){
-      dir = getenv("HOME");
-      if(chdir(dir) != 0) {
-        fprintf(stderr, "An error has occurred\n");
-      }
-    }
-  else {
-    dir = args[1];
-    if (chdir(dir) != 0) {
-      fprintf(stderr, "An error has occurred\n");
-    }
-  }
-  return 0;
+int wCd(char *args[]){
+ //  if (strcmp(args[0], "cd") == 0) {
+ //    char* dir;
+ //    if( num_args == 1){
+ //      dir = getenv("HOME");
+ //      if(chdir(dir) != 0) {
+ //        reportError();
+ //      }
+ //    }
+ //  else {
+ //    dir = args[1];
+ //    if (chdir(dir) != 0){
+ //      reportError();
+ //    }
+ //  }
+ //  return 0;
+ // }
+ // return 1;
+ if (args[1] == NULL) {
+   fprintf(stderr, "whoosh: expected argument to \"cd\"\n");
+ }
+ else {
+   if (chdir(args[1]) != 0) {
+     // Comment out as an example of merge conflict
+    perror("whoosh");
+   }   
  }
  return 1;
 }
@@ -282,4 +258,12 @@ int wCd(char *args[], int num_args)
 void reportError() {
   char error_message[30] = "An error has occurred\n";
   write(STDERR_FILENO, error_message, strlen(error_message));
+}
+
+int main(int argc, char**argv) {
+printPrompt();
+
+return 0;
+
+
 }
