@@ -72,8 +72,14 @@ void printPrompt() {
     isContinuing = execCommands(inputArray); // execute those arugments
     //printf("isContinuing is: %d\n", isContinuing);
     free(input);
-    free(inputArray);
+    free(inputArray);    
   }
+  // free(path); ??
+  // Iterate to free each element in path !
+  for (int i = 0; i < pathArrSize; i++) {
+    free(path[i]);
+  }
+  free(path);
 }
 
 int execCommands(char** args) {
@@ -107,8 +113,8 @@ int setPath(char** args) {
     path = calloc(pathArrSize + 1, sizeof(char*)); 
     for (int i = 0; i < pathArrSize; i++) {
       if (args[i + 1] != NULL) {
-	path[i] = args[i + 1];
-	printf("Element %d in path is %s\n", i, path[i]);
+	path[i] = malloc(sizeof(char*)*MAX_LINE_LEN);
+	strcpy(path[i], args[i + 1]);	
       }
     }
     return 1;
@@ -135,7 +141,6 @@ int printPath() {
   char* thePath;
   thePath = malloc(sizeof(char)*MAX_LINE_LEN);
 
-  printf("Element 0 is %s\n", path[0]);
   // Copy the first element of path array into the variable. Check error
   char* dest1 = strcpy(thePath, path[0]);
   if (dest1 == NULL) {
@@ -143,7 +148,7 @@ int printPath() {
     exit(1);
     return 0;
   }
-  printf("thePath is %s\n", thePath);
+
   // Concatenate the rest 
   for (int i = 0; i < pathArrSize; i++) {
     // If next element is not null, concatenate and check error
