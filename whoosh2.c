@@ -13,27 +13,23 @@ int wExit(char** args);
 int wPwd(char *args);
 int wCd(char *args[]);
 int printPath();
-void setPath(char* args);
+int setPath(char** args);
 void runFile(char** args);
 void reportError();
 
 #define MAX_LINE_LEN 128
 
-char* path = "/bin";
+char** path;
+int pathArrSize;
 
 int main (int argc, char *argv[]) {
-  //loop();
-  
-  /* setPath("/usr/games"); */
-  /* printPath(); */
-
   /* char* arr[] = {"/usr/games/gnome-sudoku", NULL}; */
   /* runFile(arr); */
 
   /* char* input = readInput(); */
   /* char** inputArray = parseInput(input); */
-  /* execCommands(inputArray); */
-  
+  /* /\* execCommands(inputArray); *\/ */
+
   /* int i = 0; */
   /* while (i < 5) { */
   /*   if (inputArray[i] != NULL) { */
@@ -43,12 +39,24 @@ int main (int argc, char *argv[]) {
   /*   } */
   /*   i++; */
   /* } */
+
+  /* setPath(inputArray); */
+
+  /* char* arr[] = {"/bin", "/usr/games", "/random", "f", "g"}; */
+  /* pathArrSize = sizeof(arr)/sizeof(char*); */
+  /* path = calloc(6, sizeof(char *)); // Add 1 Then -1 because throw out the first argument */  
+  /* for (int i = 0; i < sizeof(arr)/sizeof(char *); i++) { */
+  /*   path[i] = arr[i]; */
+  /* } */
+  /* setPath(arr); */
+  
+  /* printPath(); */
   
   /* free(input); */
   /* free(inputArray); */
-
-  printPrompt();
+  /* free(path); */
   
+  printPrompt(); 
   return 0;
 }
 
@@ -62,7 +70,7 @@ void printPrompt() {
     input = readInput(); // a function call to reads the input
     inputArray = parseInput(input); //  a function call to split the input into arguements
     isContinuing = execCommands(inputArray); // execute those arugments
-
+    //printf("isContinuing is: %d\n", isContinuing);
     free(input);
     free(inputArray);
   }
@@ -84,13 +92,86 @@ int execCommands(char** args) {
 	return printPath();
 	break;
       case 4: // setPath command
-	// setPath(args);
+	return setPath(args);
 	break;
       }
     }
   }
   return 0;
 }
+
+int setPath(char** args) {
+  // If path is not null
+  if (args[1] != NULL) {
+    // Allocate memory for path (add 1 to size for later read)
+    path = calloc(pathArrSize + 1, sizeof(char*)); 
+    for (int i = 0; i < pathArrSize; i++) {
+      if (args[i + 1] != NULL) {
+	path[i] = args[i + 1];
+	printf("Element %d in path is %s\n", i, path[i]);
+      }
+    }
+    return 1;
+  } else {
+    reportError();
+    exit(1);
+    return 0;
+  }
+}
+
+/**
+ * Method to print out the path (/bin is default)
+ * Makes a copy of path so as not to modify path variable
+ *
+ **/
+int printPath() {
+  // If path doesn't already have a value, give it default value
+  if (path == NULL) {
+    path = calloc(2, sizeof(char *));
+    pathArrSize = 1;
+    path[0] = "/bin";
+  }
+  // Allocate memory for a char variable that will be printed out
+  char* thePath;
+  thePath = malloc(sizeof(char)*MAX_LINE_LEN);
+
+  printf("Element 0 is %s\n", path[0]);
+  // Copy the first element of path array into the variable. Check error
+  char* dest1 = strcpy(thePath, path[0]);
+  if (dest1 == NULL) {
+    reportError();
+    exit(1);
+    return 0;
+  }
+  printf("thePath is %s\n", thePath);
+  // Concatenate the rest 
+  for (int i = 0; i < pathArrSize; i++) {
+    // If next element is not null, concatenate and check error
+    if (path[i + 1] != NULL) {
+      dest1 = strcat(thePath, " ");
+      dest1 = strcat(thePath, path[i + 1]);
+      if (dest1 == NULL) {
+	reportError();
+	exit(1);
+	return 0;
+      }
+    }
+  }
+  // Then concatenate end line character & check error       
+  dest1 = strcat(thePath, "\n");
+  if (dest1 == NULL) {
+    reportError();
+    exit(1);
+    return 0;
+  }
+  // Print out variable
+  printf("%s", thePath);
+  
+  // Free the variable
+  free(thePath);
+  return 1;
+}
+
 
 char* readInput() {
   char *line = NULL;
@@ -116,7 +197,7 @@ char* readInput() {
 
 char** parseInput(char* line){
   int arraySize = MAX_LINE_LEN;
-  char ** tokens = calloc(arraySize, sizeof(char *));
+  char** tokens = calloc(arraySize, sizeof(char *));
   char* delim = " \n\t"; //Separate based on space, end line and tab characters
   int index = 0;
 
@@ -145,49 +226,13 @@ char** parseInput(char* line){
     //}
     
   // Give last token a null value
-  tokens[index] = NULL;  
+  tokens[index] = NULL;
+
+  // Save latest number of array size to be used for setpath
+  if (strcmp(tokens[0], "setpath") == 0) {
+    pathArrSize = index - 1; // Subtract first argument
+  }
   return tokens;
-}
-
-/**
- * Method to print out the path (/bin is default)
- * Makes a copy of path so as not to modify path variable
- *
- **/
-int printPath() {
-  // Allocate memory for a copy of path
-  // and report error during string copy
-  char* thePath;
-  thePath = malloc(sizeof(char *)*strlen(path)); 
-  char* dest1 = strcpy(thePath, path); 
-  if (dest1 == NULL) {
-    reportError();
-    exit(1);                       
-    return 0;
-  }
-  
-  // Concatenate path copy with end line character
-  // and print out. Report error when concatenate
-  char* dest2 = strcat(thePath, "\n");
-  if (dest2 != NULL) {
-    printf("%s", thePath);     
-  } else {
-    reportError();
-    exit(1);                         
-    return 0;
-  } 
-  // Free the variable
-  free(thePath);
-  return 1;
-}
-
-void setPath(char* args) {
-  if (args != NULL) {
-    path = args;
-  } else {
-    reportError();
-    exit(1);
-  }
 }
 
 void runFile(char** args) {
