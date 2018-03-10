@@ -12,8 +12,8 @@ void printPrompt();
 char* readInput();
 char** parseInput(char* line);
 int execCommands(char** args);
-int wExit(char** args);
-int wPwd(char* args[]);
+int wExit();
+int wPwd();
 int wCd(char* args[]);
 int printPath();
 int setPath(char** args);
@@ -22,62 +22,50 @@ int runExecutable(char* thePath, char** args);
 void reportError();
 #define MAX_LINE_LEN 128
 
-char** path;
-int pathArrSize;
+char** path; // Variable for path array
+int pathArrSize; // Variable tokeep track of path size
 
 int main (int argc, char *argv[]) {
-  /* char* arr[] = {"/usr/games/gnome-sudoku", NULL}; */
-  /* runFile(arr); */
-
-  /* char* input = readInput(); */
-  /* char** inputArray = parseInput(input); */
-  /* /\* execCommands(inputArray); *\/ */
-
-  /* setPath(inputArray); */
-
-  /* char* arr[] = {"/bin", "/usr/games", "/random", "f", "g"}; */
-  /* pathArrSize = sizeof(arr)/sizeof(char*); */
-  /* path = calloc(6, sizeof(char *)); // Add 1 Then -1 because throw out the first argument */  
-  /* for (int i = 0; i < sizeof(arr)/sizeof(char *); i++) { */
-  /*   path[i] = arr[i]; */
-  /* } */
-  /* setPath(arr); */
-  
-  /* printPath(); */
-  
-  /* free(input); */
-  /* free(inputArray); */
-  /* free(path); */
-  
+  // If there is more than one argument, report error and exit
+  if (argc > 1) {
+    reportError();
+    exit(1);
+  }
+  // If not, print whoosh prompt
   printPrompt(); 
   return 0;
 }
 
-
 void printPrompt() {
   char* input;
   char** inputArray;
+  // Variable to keep track of whether to continue the loop
   int isContinuing = 1;
 
   while (isContinuing) {
-    printf("whoosh> "); // print prompt
-    input = readInput(); // a function call to reads the input
-    inputArray = parseInput(input); //  a function call to split the input into arguements
-    isContinuing = execCommands(inputArray); // execute those arugments
-    /* int i = 0; */
-    /* while (i < 5) { */
-    /*   if (inputArray[i] != NULL) { */
-    /* 	printf("Input %d is: %s\n", i, inputArray[i]); */
-    /*   } else { */
-    /* 	printf("Input %d is: %s\n", i, "null"); */
-    /*   } */
-    /*   i++; */
-    /* } */
+    printf("whoosh> ");
     
-    // Free input
-    free(input);
-    free(inputArray);    
+    // A function call to reads the input
+    input = readInput();
+
+    // If the input is valid
+    if (input != NULL) {
+      
+      // Split the input into arguements
+      inputArray = parseInput(input);
+
+      // Execute those arugments
+      isContinuing = execCommands(inputArray);
+    
+      // Free input
+      free(inputArray);    
+      free(input);
+      
+    } else {
+      reportError();     
+    }        
   }
+  // On exiting whoosh
   if (path != NULL) {
     // Free each element in path array
     for (char** arr = path; *arr; arr++) {
@@ -95,11 +83,13 @@ int execCommands(char** args) {
     if (strcmp(args[0], commands[i]) == 0) {
       switch(i) {
       case 0: // exit command
-	return wExit(args);	
+	return wExit();	
 	break;
       case 1: // pwd command
+	return wPwd();
 	break;
       case 2: // cd command
+	return wCd(args);
 	break;
       case 3: // printPath command
 	return printPath();
@@ -111,8 +101,7 @@ int execCommands(char** args) {
     }
   }
   // If command is not one of the built-ins
-  // Check to see if it's an external program and run it
-  
+  // Check to see if it's an external program and run it  
   return runFile(args);
 }
 
@@ -149,8 +138,7 @@ int runFile(char** args) {
   // If no file is found, report error
   if (isFileRun == 0){
     reportError();
-  }
-  
+  }  
   return 1;
 }
 
@@ -178,7 +166,6 @@ int runExecutable(char* thePath, char** args) {
   else {
     pid_t waited;
     int status;
-
     waited = wait(&status);
     if (waited == -1) {
       reportError();
@@ -286,27 +273,30 @@ char* readInput() {
   if (stdin != NULL) {
   readResult = getline(&line, &lineLen, stdin);
   } else {
-    fprintf(stderr, "Error: stdin is null\n");
-    exit(1);
+    return NULL;
   }
-  // Report error if reading result is -1
+ 
+  // Report error if getline fails and if line is empty or too long
   if ((readResult == -1)) {
-    fprintf(stderr, "Error: cannot read line\n");
-    exit(1);
-  } else if (readResult > MAX_LINE_LEN) {
-    fprintf(stderr, "Error: Line too long - Continue processing\n");
+    free(line);
+    return NULL;
+  } else if ((readResult >= MAX_LINE_LEN) || (readResult <= 1)) {
+    free(line);
+    return NULL;
   }
   return line;
 }
 
 char** parseInput(char* line){
-  int arraySize = MAX_LINE_LEN;
-  char** tokens = calloc(arraySize, sizeof(char *));
-  char* delim = " \n\t"; //Separate based on space, end line and tab characters
+  int arraySize = ;
+  char** tokens = calloc(MAX_LINE_LEN, sizeof(char *));
+  char* delim = " \n\t"; // Separate based on space, end line and tab characters
   int index = 0;
 
+  // If calloc fail, report error
   if(tokens == NULL) {
-    fprintf(stderr, "ERROR: Malloc failed\n" );
+    reportError();
+    return NULL;
   }
   // On first call, strtok returns pointer to
   // the firt part of line separated by delimiter
@@ -314,21 +304,15 @@ char** parseInput(char* line){
 
   // On subsequent calls, strtok takes NULL as value to string
   // While previous token is not null, keep chopping the line
-  //while (index < arraySize) {
-    while(tokens[index] != NULL) {
-      index++;
-      tokens[index] = strtok(NULL, delim);
-
-      /* if(index >= arraySize) { // if outbounds, reallocate */
-      /* 	arraySize = arraySize + MAX_LINE_LEN; */
-      /* 	tokens = realloc(tokens, sizeof(char *) * arraySize); */
-      /* 	if(tokens == NULL) { */
-      /* 	  fprintf(stderr,"ERROR: malloc failed\n" ); */
-      /* 	} */
-      /* }  */
+  while(tokens[index] != NULL) {
+    index++;
+    tokens[index] = strtok(NULL, delim);
+    // If out of bounds, report error
+    if(index >= MAX_LINE_LEN) { 
+      reportError();
+      return NULL;
     }
-    //}
-
+  }
   // Give last token a null value
   tokens[index] = NULL;
 
@@ -339,58 +323,38 @@ char** parseInput(char* line){
   return tokens;
 }
 
-int wExit(char** args) {
-  /* if( strcmp (args[0], "exit") == 0) { */
-  /*   exit(1); */
-  /* } */
+int wExit() {
   return 0;
 }
 
-int wPwd(char *args[]) {
-  if( strcmp (args[0], "pwd") == 0) {
-    char buff[PATH_MAX + 1];
-    char* cwd;
+int wPwd() {
+  char buffer[MAX_LINE_LEN + 1];
+  char* cwd;
 
-    cwd = getcwd(buff, PATH_MAX + 1);
-    if(cwd != NULL) {
-      printf("%s\n",cwd);
-    } else{
-      reportError();
-    }
-      return 0;
+  cwd = getcwd(buffer, MAX_LINE_LEN);
+  if(cwd != NULL) {
+    printf("%s\n",cwd);
+  } else{
+    reportError();
   }
   return 1;
-
 }
 
 int wCd(char *args[]){
- //  if (strcmp(args[0], "cd") == 0) {
- //    char* dir;
- //    if( num_args == 1){
- //      dir = getenv("HOME");
- //      if(chdir(dir) != 0) {
- //        reportError();
- //      }
- //    }
- //  else {
- //    dir = args[1];
- //    if (chdir(dir) != 0){
- //      reportError();
- //    }
- //  }
- //  return 0;
- // }
- // return 1;
- if (args[1] == NULL) {
-   fprintf(stderr, "whoosh: expected argument to \"cd\"\n");
- }
- else {
-   if (chdir(args[1]) != 0) {
-     // Comment out as an example of merge conflict
-    perror("whoosh");
-   }   
- }
- return 1;
+  char* dir;
+  if(args[1] == NULL){
+    dir = getenv("HOME");
+    if(chdir(dir) != 0) {
+      reportError();
+    }
+  }
+  else {
+    dir = args[1];
+    if (chdir(dir) != 0){
+      reportError();
+    }
+  }
+  return 1;
 }
 
 void reportError() {
