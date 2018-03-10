@@ -12,12 +12,13 @@ void printPrompt();
 char* readInput();
 char** parseInput(char* line);
 int execCommands(char** args);
-int wExit(char* args[]);
+int wExit(char** args);
 int wPwd(char* args[]);
 int wCd(char* args[]);
 int printPath();
 int setPath(char** args);
-void runFile(char** args);
+int runFile(char** args);
+int runExecutable(char* thePath, char** args);
 void reportError();
 #define MAX_LINE_LEN 128
 
@@ -31,16 +32,6 @@ int main (int argc, char *argv[]) {
   /* char* input = readInput(); */
   /* char** inputArray = parseInput(input); */
   /* /\* execCommands(inputArray); *\/ */
-
-  /* int i = 0; */
-  /* while (i < 5) { */
-  /*   if (inputArray[i] != NULL) { */
-  /*   printf("Input %d is: %s\n", i, inputArray[i]); */
-  /*   } else { */
-  /*    printf("Input %d is: %s\n", i, "null"); */
-  /*   } */
-  /*   i++; */
-  /* } */
 
   /* setPath(inputArray); */
 
@@ -73,26 +64,38 @@ void printPrompt() {
     input = readInput(); // a function call to reads the input
     inputArray = parseInput(input); //  a function call to split the input into arguements
     isContinuing = execCommands(inputArray); // execute those arugments
-
-    //printf("isContinuing is: %d\n", isContinuing);
+    /* int i = 0; */
+    /* while (i < 5) { */
+    /*   if (inputArray[i] != NULL) { */
+    /* 	printf("Input %d is: %s\n", i, inputArray[i]); */
+    /*   } else { */
+    /* 	printf("Input %d is: %s\n", i, "null"); */
+    /*   } */
+    /*   i++; */
+    /* } */
+    
+    // Free input
     free(input);
     free(inputArray);    
   }
-  // free(path); ??
-  // Iterate to free each element in path !
-  for (int i = 0; i < pathArrSize; i++) {
-    free(path[i]);
+  if (path != NULL) {
+    // Free each element in path array
+    for (char** arr = path; *arr; arr++) {
+      free(*arr);
+    }
+    // Free the path array
+    free(path);
   }
-  free(path);
 }
 
 int execCommands(char** args) {
+  
   char *commands[] = {"exit","pwd", "cd", "printpath", "setpath"};
   for (int i = 0; i < sizeof(commands)/sizeof(char *); i++) {
     if (strcmp(args[0], commands[i]) == 0) {
       switch(i) {
       case 0: // exit command
-	//wExit();
+	return wExit(args);	
 	break;
       case 1: // pwd command
 	break;
@@ -102,45 +105,124 @@ int execCommands(char** args) {
 	return printPath();
 	break;
       case 4: // setPath command
-	return setPath(args);
+	return setPath(args);	
 	break;
       }
     }
   }
-  return 0;
+  // If command is not one of the built-ins
+  // Check to see if it's an external program and run it
+  
+  return runFile(args);
 }
 
-/* int execCommands(char* args[]) { */
-/*   //char *commands[] = {"exit","pwd", "cd", "printpath", "setpath"}; */
-/*   if( args[0] == NULL) { */
-/*     return 1; */
-/*   } */
-/*   int i; */
-/*   for(i = 0; i < num_built_commands(); i++) { */
-/*     if( strcmp(args[0], commands_str[i]) == 0) { */
-/*       return (*command_func[i])(args); */
-/*     } */
-/*   } */
-/*   runFile(args); */
-/* } */
+int runFile(char** args) {
+  int isFileRun = 0;
+  
+  // If path is null, give it default value
+  if (path == NULL) {
+    path = calloc(2, sizeof(char *));
+    pathArrSize = 1;
+    path[0] = malloc(sizeof(char*));
+    char* des1 = strcpy(path[0],"/bin");
+    if (des1 == NULL) {
+      reportError();
+    }    
+  }
+  // Look into each element in path array
+  for (int i = 0; i < pathArrSize; i++) {
+ 
+    // Concatenate user command and path element into a variable
+    char* thePath = malloc(sizeof(char)*MAX_LINE_LEN);
+    strcpy(thePath, path[i]);
+    strcat(thePath, "/");
+    strcat(thePath, args[0]);
+
+    // Check if file exists using the path variable
+    // If it does, run the file. If not, keep looking
+    struct stat buffer;
+    if (stat(thePath, &buffer) == 0) {
+      isFileRun = runExecutable(thePath, args);
+    }    
+    free(thePath);    
+  }
+  // If no file is found, report error
+  if (isFileRun == 0){
+    reportError();
+  }
+  
+  return 1;
+}
+
+int runExecutable(char* thePath, char** args) {
+  pid_t pid;
+  int isFileRun = 1;
+
+  pid = fork();
+  // If pid is negative, report error
+  if (pid < 0) {
+    reportError();
+  }
+  // If pid is 0, this is the child
+  else if (pid == 0) {
+   
+    // Run the executable
+    // If file cannot be executed, report error and continue processing
+    if (execv(thePath, args) == -1) {
+      reportError();
+      isFileRun = 0;
+    }
+  }
+  // If pid is positive, this is the parent
+  // Wait for child to complete
+  else {
+    pid_t waited;
+    int status;
+
+    waited = wait(&status);
+    if (waited == -1) {
+      reportError();
+    }
+  }
+  return isFileRun;
+}
 
 int setPath(char** args) {
-  // If path is not null
-  if (args[1] != NULL) {
-    // Allocate memory for path (add 1 to size for later read)
+  char *des1;
+  
+  // If arguments are not null
+  if (args[1] != NULL){
+    
+    // If path is not null
+    if (path != NULL) {
+      // Free the memory previously allocated for path
+      for (char** arr = path; *arr; arr++) {
+	free(*arr);
+      }
+      free(path);
+    }
+    
+    // Allocate new memory for path (add 1 to size for later function)
     path = calloc(pathArrSize + 1, sizeof(char*)); 
     for (int i = 0; i < pathArrSize; i++) {
+
+      // Allocate memory for each element in path
+      // Copy from args into path, ignore the arg[0]
       if (args[i + 1] != NULL) {
 	path[i] = malloc(sizeof(char*)*MAX_LINE_LEN);
-	strcpy(path[i], args[i + 1]);	
+	des1 = strcpy(path[i], args[i + 1]);
+	if (des1 == NULL) {
+	  reportError();
+	}   
       }
-    }
-    return 1;
+    }   
   } else {
+    // If arguments are null, report error
     reportError();
-    exit(1);
     return 0;
   }
+  
+  return 1;
 }
 
 /**
@@ -149,45 +231,44 @@ int setPath(char** args) {
  *
  **/
 int printPath() {
-  // If path doesn't already have a value, give it default value
+  char *des1, *des2;
+  
+  // If path is null, give it default value
   if (path == NULL) {
     path = calloc(2, sizeof(char *));
-    pathArrSize = 1;
-    path[0] = "/bin";
+    path[0] = malloc(sizeof(char*));
+    des1 = strcpy(path[0],"/bin");
+      if (des1 == NULL) {
+	reportError();
+    }    
   }
+  
   // Allocate memory for a char variable that will be printed out
-  char* thePath;
-  thePath = malloc(sizeof(char)*MAX_LINE_LEN);
+  char* thePath =  malloc(sizeof(char)*MAX_LINE_LEN);
 
-  // Copy the first element of path array into the variable. Check error
-  char* dest1 = strcpy(thePath, path[0]);
-  if (dest1 == NULL) {
+  // Copy the first element of path array into the variable
+  des1 = strcpy(thePath, path[0]);
+  if (des1 == NULL) {
     reportError();
-    exit(1);
-    return 0;
   }
-
+ 
   // Concatenate the rest 
   for (int i = 0; i < pathArrSize; i++) {
-    // If next element is not null, concatenate and check error
+    // If next element is not null, concatenate 
     if (path[i + 1] != NULL) {
-      dest1 = strcat(thePath, " ");
-      dest1 = strcat(thePath, path[i + 1]);
-      if (dest1 == NULL) {
+      des1 = strcat(thePath, " ");
+      des2 = strcat(thePath, path[i + 1]);
+      if ((des1 == NULL) || (des2 == NULL)) {
 	reportError();
-	exit(1);
-	return 0;
       }
     }
   }
-  // Then concatenate end line character & check error       
-  dest1 = strcat(thePath, "\n");
-  if (dest1 == NULL) {
+  // Then concatenate end line character    
+  des1 = strcat(thePath, "\n");
+  if (des1 == NULL) {
     reportError();
-    exit(1);
-    return 0;
   }
-  // Print out variable
+  // Print out path
   printf("%s", thePath);
   
   // Free the variable
@@ -258,54 +339,9 @@ char** parseInput(char* line){
   return tokens;
 }
 
-void runFile(char** args) {
-  pid_t pid;
-
-  pid = fork();
-  // If pid is negative, report error
-  if (pid < 0) {
-    fprintf(stderr, "Can't fork a process\n");
-
-  }
-  // If pid is 0, this is the child
-  else if (pid == 0) {
-
-    // Check if file exists using stat
-    struct stat buffer;
-    if (stat(args[0], &buffer) == 0) {
-
-      // Run the executable
-      // If file cannot be executed, report error and continue processing
-      if (execv(args[0], args) == -1) {
-	perror("Report error and continue processing ");
-      }
-    }
-    // If file doesn't exist, report error and continue processing
-    else {
-      fprintf(stderr, "Report error and continue processing\n");
-    }
-  }
-  // If pid is positive, this is the parent
-  // Wait for child to complete
-  else {
-    pid_t waited;
-    int status;
-
-    waited = wait(&status);
-    if (waited == -1) {
-      perror("wait() ERROR ");
-    }
-    else {
-      // print its exit code
-      fprintf(stdout,"I am the parent. My child exited with code %d\n",
-	      WEXITSTATUS(status));
-    }
-  }
-}
-
-int wExit(char* args[]) {
-  /* if(strcmp(args[0], "exit") == 0) { */
-  /*   exit(0); */
+int wExit(char** args) {
+  /* if( strcmp (args[0], "exit") == 0) { */
+  /*   exit(1); */
   /* } */
   return 0;
 }
