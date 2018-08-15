@@ -36,7 +36,6 @@ When user enters a command that is not one of the above, the shell searches the 
 and wait for that program to complete before printing another prompt. If not, it gives an error message. As long as a correct path is given, the shell can run any program, ranging from simple clock program to more complicated gaming applications. 
 
 <br> 
-<br>
 
 ### Defensive error checking  
 The shell was programmed defensively. When there is an error, the shell gives the message `An error has occured`. In most cases, it does not core dump, hang indefinitely or prematurely terminate. An important note: the shell assumes that the maximum length of a line of input is 128 bytes.
