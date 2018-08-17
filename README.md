@@ -9,7 +9,6 @@ The program has the following functions:
 ### `cd`
 This is a *change directory* command. When user enters `cd` followed by a path, the shell changes the working directory to the specified path. When user enters `cd` without arguments, the shell changes to the path stored in the $HOME environment variable.
 
-<br>
 
 ### `pwd`
 This is a *print working directory* command. When user types `pwd`, the shell prints out the current directory.
