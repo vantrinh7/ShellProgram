@@ -38,4 +38,3 @@ Whenever there is an error, the shell gives the message `An error has occured`. 
 ## File description
 * [whoosh.c](https://github.com/vantrinh7/ShellProgram/blob/master/whoosh.c) contains the source code of the program.
 * [makefile](https://github.com/vantrinh7/ShellProgram/blob/master/makefile) contains the rules to run the program from Terminal.
-<br>
