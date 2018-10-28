@@ -32,7 +32,7 @@ and waits for that program to complete before printing another prompt. If not, i
 
 
 ## Defensive error checking  
-The shell was programmed defensively. When there is an error, the shell gives the message `An error has occured`. In most cases, it does not core dump, hang indefinitely or prematurely terminate. An important note: the shell assumes that the maximum length of a line of input is 128 bytes.
+Whenever there is an error, the shell gives the message `An error has occured`. In most cases, it does not core dump, hang indefinitely or prematurely terminate. An important note: the shell assumes that the maximum length of a line of input is 128 bytes.
 
 
 ## File description
