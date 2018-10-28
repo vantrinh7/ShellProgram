@@ -26,11 +26,15 @@ This command prints out the path variable. It is a variable that contains a list
 This command changes the path variable to a given value. For example, `setpath /usr/games` changes path variable to `/usr/games`. If user provides no value after `setpath`, the path variable will be set to null.
 
 
-### Execute external programs
+## Executing external programs
 When user enters a command that is not one of the above, the shell searches the paths stored in path variable for a file with that name. If the shell finds a matching file, it will fork a process to run the program in, execute the program,
 and wait for that program to complete before printing another prompt. If not, it gives an error message. As long as a correct path is given, the shell can run any program, ranging from simple clock program to more complicated gaming applications. 
 
 
-### Defensive error checking  
+## Defensive error checking  
 The shell was programmed defensively. When there is an error, the shell gives the message `An error has occured`. In most cases, it does not core dump, hang indefinitely or prematurely terminate. An important note: the shell assumes that the maximum length of a line of input is 128 bytes.
+
+## File description
+* [whoosh.c](https://github.com/vantrinh7/ShellProgram/blob/master/whoosh.c) contains the source code of the program.
+* [makefile](https://github.com/vantrinh7/ShellProgram/blob/master/makefile) contains the rules to run the program from Terminal.
 <br>
