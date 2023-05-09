@@ -1,6 +1,6 @@
 # Shell Program
 
-This program functions as a shell - a command-line interface for access to services provided by the operating system. This program simulates Bash, a widely adopted Unix shell. It runs inside the Terminal application on Mac and Linux. 
+This program functions as a shell, a command-line interface for access to services provided by the operating system. This program simulates Bash, a widely adopted Unix shell. It runs inside the Terminal application on Mac and Linux. 
 
 This shell is an interactive loop. It repeatedly prints a prompt "whoosh> ", detects an user input, parses the input, executes the command specified, and waits for the command to finish. 
 
