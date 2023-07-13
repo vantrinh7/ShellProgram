@@ -1,4 +1,4 @@
-# Shell Program
+# Shell Program 
 
 This program functions as a shell, a command-line interface for access to services provided by the operating system. This program simulates Bash, a widely adopted Unix shell. It runs inside the Terminal application on Mac and Linux.
 
