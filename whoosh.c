@@ -123,7 +123,7 @@ char* readInput() {
 /**
  * This method parses the input into an array of pointers
  * @param char* line the input line
- * @param char** the resulting array
+ * @return char** the resulting array
  *
  **/
 char** parseInput(char* line){
